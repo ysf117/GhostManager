@@ -1,0 +1,98 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider  = "postgresql"
+}
+
+// ============================================
+// ENUMS - Matching Section 3 of architecture.md
+// ============================================
+
+enum Currency {
+  USD
+  EUR
+  GBP
+}
+
+enum BillingCycle {
+  MONTHLY
+  YEARLY
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  PAUSED
+}
+
+// ============================================
+// MODELS - Matching Section 3 of architecture.md
+// ============================================
+
+/// User model representing application users
+/// Maps to "Users" table in architecture spec
+model User {
+  id                 String         @id @default(uuid()) @db.Uuid
+  email              String         @unique
+  name               String?
+  avatar_url         String?
+  default_currency   String         @default("USD")
+  show_monthly_costs Boolean        @default(false)
+  budget_limit       Float          @default(500.0)
+
+  // Relations
+  subscriptions Subscription[]
+
+  // Timestamps
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  @@map("users")
+}
+
+/// Subscription model representing user subscriptions
+/// Maps to "Subscriptions" table in architecture spec
+model Subscription {
+  id                String             @id @default(uuid()) @db.Uuid
+  
+  // Foreign Key to User
+  user_id           String             @db.Uuid
+  user              User               @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  // Subscription Details
+  service_name      String
+  cost              Float
+  currency          Currency           @default(USD)
+  billing_cycle     BillingCycle       @default(MONTHLY)
+  
+  // Dates
+  start_date        DateTime
+  next_billing_date DateTime           // Calculated field based on start_date and billing_cycle
+  
+  // Status
+  status            SubscriptionStatus @default(ACTIVE)
+  
+  // UI Metadata
+  icon_key          String?            // Icon identifier for UI display (e.g., "netflix", "aws")
+  category          String             @default("Other")
+  
+  // Trial & Reminders
+  is_trial          Boolean            @default(false)
+  trial_end_date    DateTime?
+  reminder_days     Int?               // Null = No reminder, 1 = 1 day before, etc.
+
+  // Timestamps
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+
+  @@index([user_id])
+  @@map("subscriptions")
+}

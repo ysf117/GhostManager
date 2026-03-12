@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Subscription Spend Analysis Dashboard v2</title>
+<script type='text/javascript' nonce='bPXcqYcR7JUiImUIX1A/jg==' src='https://contribution.usercontent.google.com/xyCfAWUFRzeuZh-4p-3vzZ6sU6YCDcJclDsk5-83krWaz2cCdwIwCnqvY9tUVBwY8sSJ-m2Wrdo8nRwySNiGW5kgq6sQrkHPIE5TJEXy1qaM6xqOKNZPJOBdaskCXaQgXIe1gEO2cVkGsWxlXBFATZAdN8YaNUDLeC9vF7nj-qBtadb_cLayDHPvg0dPp3w_xBSF5s62d6XvDe_YIKSjGTtaFXCfsIf0HoF7_zNl78VWatNBx_wKvYy86tGyWVJyUhmUaQUgbRUvhsn2Lv-iGff4H_u-xoPxyrJhNBmGJZo-UfcPf-IPaIMWHClKcF5e0D_V4WP-8GBREz9fVPagvQzDh3BP54w1vNjbVzStTrWYBkMj0jswI9VrVfmp9tbwkaABK1ryDwZhW5MAE-lZAZNL7xIvi9OKABp0CJl6xl4d_D-5zh39D6zo3IgTMGCgePzL_lWUpQXyEYNYUrt3oy7XYS4M6sTPPTqOp35UrJOsaQ8WZ2kwRZuIENlIyl7WsI5_INxwgWjT_E6yLacOFKvN7TH__x9z8HWMHYUP7vzirPxHB6Dxo-Fae6Afc7iz195Dun8Z6tKk5nL0zOSnahgPuJ9NDfdKE9b26zG-lYGEoxIy6mJzOSGSvXGepYfY5NpS28N3MNLS_zri6JlNKtbq9tTP-TGTrCsjfXPJuU9jOKr16Mhn4JdVrHAzYd8pAwdoKl3L0d0CGgvaOD1h3X8ORJvUWSJmV4eHosEFAyMizky03o27RDUHJuJ86hUJ12DZoujSnssN7iyHoTNFNQhf1aip-NxKsRKrW_ln'></script><script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#3d40f0",
+                        "background-light": "#f6f6f8",
+                        "background-dark": "#101122",
+                    },
+                    fontFamily: {
+                        "display": ["Inter"]
+                    },
+                    borderRadius: {"DEFAULT": "0.5rem", "lg": "1rem", "xl": "1.5rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style type="text/tailwindcss">
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .glass-card {
+            background: rgba(24, 24, 27, 0.5);backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .chart-gradient-fill {
+            fill: url(#chartGradient);
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 font-display">
+<div class="flex min-h-screen">
+<aside class="w-64 border-r border-white/5 bg-background-dark/50 hidden lg:flex flex-col sticky top-0 h-screen">
+<div class="p-6 flex items-center gap-3">
+<div class="size-10 bg-primary rounded-xl flex items-center justify-center text-white">
+<span class="material-symbols-outlined fill-1">mist</span>
+</div>
+<div>
+<h1 class="text-white text-base font-bold leading-none">Ghost Finance</h1>
+<p class="text-zinc-500 text-xs mt-1">Pro Account</p>
+</div>
+</div>
+<nav class="flex-1 px-4 mt-4 space-y-1">
+<a class="flex items-center gap-3 px-3 py-2 rounded-xl bg-primary/10 text-primary" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="text-sm font-medium">Dashboard</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-xl text-zinc-400 hover:bg-white/5 hover:text-white transition-all" href="#">
+<span class="material-symbols-outlined">subscriptions</span>
+<span class="text-sm font-medium">Subscriptions</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-xl text-zinc-400 hover:bg-white/5 hover:text-white transition-all" href="#">
+<span class="material-symbols-outlined">payments</span>
+<span class="text-sm font-medium">Payments</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-xl text-zinc-400 hover:bg-white/5 hover:text-white transition-all" href="#">
+<span class="material-symbols-outlined">bar_chart</span>
+<span class="text-sm font-medium">Reports</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-xl text-zinc-400 hover:bg-white/5 hover:text-white transition-all" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="text-sm font-medium">Settings</span>
+</a>
+</nav>
+<div class="p-6">
+<div class="glass-card p-4 rounded-xl border-indigo-500/20">
+<p class="text-xs text-zinc-400 mb-2">Budget Utilization</p>
+<p class="text-[11px] text-white font-medium mb-2">$342 spent <span class="text-zinc-500">of $500 limit</span></p>
+<div class="w-full bg-zinc-800 h-1.5 rounded-full overflow-hidden">
+<div class="bg-indigo-400 h-full w-[68%]"></div>
+</div>
+<p class="text-[10px] text-zinc-500 mt-2">12 days left in cycle</p>
+</div>
+</div>
+</aside>
+<main class="flex-1 flex flex-col min-w-0 bg-background-light dark:bg-background-dark">
+<header class="flex items-center justify-between px-8 py-4 border-b border-white/5">
+<div class="flex items-center gap-6 flex-1">
+<h2 class="text-xl font-bold text-white hidden md:block">Spend Analysis</h2>
+<div class="max-w-md w-full relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500">search</span>
+<input class="w-full bg-zinc-900/50 border border-white/10 rounded-xl pl-10 pr-4 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-primary/50" placeholder="Search subscriptions..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="hidden md:flex items-center gap-2 bg-white text-black px-4 py-2 rounded-xl text-sm font-bold hover:bg-zinc-200 transition-colors">
+                    New Subscription
+                    <span class="material-symbols-outlined text-sm font-bold">add</span>
+</button>
+<button class="p-2 rounded-xl bg-zinc-900/50 border border-white/10 text-zinc-400 hover:text-white">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<div class="h-10 w-10 rounded-full border-2 border-primary/30 p-0.5">
+<img alt="User profile avatar" class="w-full h-full rounded-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCJ7H-hMtc5hzMJPVU9sO0Q_oxT2Vbxdaac-IM-lD1RE81NI3ammSVY2GkDxchNc9zpZAStDFZzinMhYaDd9ay-JKc4lWSNQqG-4w-l9QgU0316Ypuv9C_U8CWeqRAc09PV2j2Lm8Dacg6wg74jJzjObFLq8Co11QFL9UeQxyGJN-tUcHkp2aL1D2H9uEraIvobDlMyjc8t-idyEp1OqOkg9x4AdIQd4XVN5x5gHoeDWDIWqqrGQoz9cGaz81G2eUZb1hwDp6Kp3vmd"/>
+</div>
+</div>
+</header>
+<div class="p-8 space-y-8 max-w-7xl mx-auto w-full">
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+<div class="glass-card p-6 rounded-xl border border-white/5">
+<p class="text-zinc-400 text-sm font-medium">Active Subs</p>
+<div class="flex items-end justify-between mt-2">
+<h3 class="text-3xl font-bold text-white tracking-tight">24</h3>
+<span class="text-emerald-500 text-xs font-bold bg-emerald-500/10 px-2 py-1 rounded-lg">+2 New</span>
+</div>
+</div>
+<div class="glass-card p-6 rounded-xl border border-white/5">
+<p class="text-zinc-400 text-sm font-medium">Next Renewal</p>
+<div class="flex items-end justify-between mt-2">
+<h3 class="text-3xl font-bold text-white tracking-tight">Oct 24</h3>
+<span class="text-primary text-xs font-bold bg-primary/10 px-2 py-1 rounded-lg">Adobe CC</span>
+</div>
+</div>
+<div class="glass-card p-6 rounded-xl border border-white/5">
+<p class="text-zinc-400 text-sm font-medium">Avg. Monthly</p>
+<div class="flex items-end justify-between mt-2">
+<h3 class="text-3xl font-bold text-white tracking-tight">$28.50</h3>
+<span class="text-zinc-500 text-xs font-medium">Per Sub</span>
+</div>
+</div>
+</div>
+<div class="glass-card rounded-2xl p-8 border border-white/10">
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+<div>
+<p class="text-zinc-400 text-sm font-medium mb-1">Monthly Total Spend</p>
+<div class="flex items-center gap-3">
+<h2 class="text-4xl font-bold text-white tracking-tight">$342.00</h2>
+<span class="flex items-center gap-1 bg-red-500/10 text-red-500 text-xs font-bold px-2 py-1 rounded-lg border border-red-500/20">
+<span class="material-symbols-outlined text-[14px] font-bold">trending_up</span>
+                                +12%
+                            </span>
+</div>
+</div>
+<div class="flex gap-2">
+<button class="px-4 py-2 bg-zinc-800 text-white rounded-lg text-xs font-bold hover:bg-zinc-700 transition-colors">1W</button>
+<button class="px-4 py-2 bg-primary text-white rounded-lg text-xs font-bold transition-colors">1M</button>
+<button class="px-4 py-2 bg-zinc-800 text-white rounded-lg text-xs font-bold hover:bg-zinc-700 transition-colors">1Y</button>
+<button class="px-4 py-2 bg-zinc-800 text-white rounded-lg text-xs font-bold hover:bg-zinc-700 transition-colors">ALL</button>
+</div>
+</div>
+<div class="h-[350px] w-full relative group">
+<div class="absolute left-0 top-0 h-full flex flex-col justify-between py-1 text-zinc-600 text-[10px] font-bold pointer-events-none">
+<span>$400</span>
+<span>$200</span>
+<span>$0</span>
+</div>
+<div class="absolute left-1/2 top-1/4 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-black border border-white/20 p-3 rounded-xl shadow-2xl z-10 pointer-events-none">
+<p class="text-[10px] uppercase tracking-wider text-zinc-500 font-bold">Aug 2023</p>
+<p class="text-white text-lg font-bold">$342.00</p>
+</div>
+<svg class="w-full h-full pl-8" preserveaspectratio="none" viewbox="0 0 1000 350">
+<defs>
+<lineargradient id="chartGradient" x1="0" x2="0" y1="0" y2="1">
+<stop offset="0%" stop-color="#3d40f0" stop-opacity="0.3"></stop>
+<stop offset="100%" stop-color="#3d40f0" stop-opacity="0"></stop>
+</lineargradient>
+</defs>
+<line stroke="white" stroke-opacity="0.05" stroke-width="1" x1="0" x2="1000" y1="0" y2="0"></line>
+<line stroke="white" stroke-opacity="0.05" stroke-width="1" x1="0" x2="1000" y1="175" y2="175"></line>
+<line stroke="white" stroke-opacity="0.05" stroke-width="1" x1="0" x2="1000" y1="350" y2="350"></line>
+<path class="chart-gradient-fill" d="M0,350 L0,250 C100,220 150,280 200,260 C300,220 350,150 400,180 C500,220 550,100 600,120 C700,150 750,50 850,80 C920,100 960,150 1000,140 L1000,350 Z"></path>
+<path d="M0,250 C100,220 150,280 200,260 C300,220 350,150 400,180 C500,220 550,100 600,120 C700,150 750,50 850,80 C920,100 960,150 1000,140" fill="none" stroke="#3d40f0" stroke-linecap="round" stroke-linejoin="round" stroke-width="4"></path>
+<circle cx="850" cy="80" fill="#3d40f0" r="6"></circle>
+<circle cx="850" cy="80" fill="none" r="12" stroke="#3d40f0" stroke-opacity="0.3" stroke-width="4"></circle>
+</svg>
+<div class="flex justify-between mt-6 px-2 pl-10">
+<span class="text-zinc-500 text-[11px] font-bold uppercase tracking-widest">Jan</span>
+<span class="text-zinc-500 text-[11px] font-bold uppercase tracking-widest">Feb</span>
+<span class="text-zinc-500 text-[11px] font-bold uppercase tracking-widest">Mar</span>
+<span class="text-zinc-500 text-[11px] font-bold uppercase tracking-widest">Apr</span>
+<span class="text-zinc-500 text-[11px] font-bold uppercase tracking-widest">May</span>
+<span class="text-zinc-500 text-[11px] font-bold uppercase tracking-widest">Jun</span>
+<span class="text-zinc-500 text-[11px] font-bold uppercase tracking-widest">Jul</span>
+<span class="text-zinc-500 text-[11px] font-bold uppercase tracking-widest">Aug</span>
+</div>
+</div>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+<div class="glass-card rounded-2xl overflow-hidden border border-white/5">
+<div class="px-6 py-5 border-b border-white/5 flex items-center justify-between">
+<h3 class="text-white font-bold">Recent Subscriptions</h3>
+<button class="text-primary text-xs font-bold hover:underline">View All</button>
+</div>
+<div class="divide-y divide-white/5">
+<div class="p-6 flex items-center gap-4 hover:bg-white/5 transition-colors cursor-pointer">
+<div class="size-12 rounded-full bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400 font-bold text-lg">
+                                A
+                            </div>
+<div class="flex-1">
+<p class="text-white font-bold text-sm">Adobe Creative Cloud</p>
+<p class="text-zinc-500 text-xs">Design Tools • Monthly</p>
+</div>
+<div class="text-right">
+<p class="text-white font-bold text-sm">$54.99</p>
+<p class="text-emerald-500 text-[10px] font-bold">Auto-pay ON</p>
+</div>
+</div>
+<div class="p-6 flex items-center gap-4 hover:bg-white/5 transition-colors cursor-pointer">
+<div class="size-12 rounded-full bg-zinc-800 border border-white/10 flex items-center justify-center text-zinc-300 font-bold text-lg">
+                                G
+                            </div>
+<div class="flex-1">
+<p class="text-white font-bold text-sm">GitHub Copilot Pro</p>
+<p class="text-zinc-500 text-xs">Development • Monthly</p>
+</div>
+<div class="text-right">
+<p class="text-white font-bold text-sm">$19.00</p>
+<p class="text-zinc-500 text-[10px] font-bold">Pending Oct 12</p>
+</div>
+</div>
+<div class="p-6 flex items-center gap-4 hover:bg-white/5 transition-colors cursor-pointer">
+<div class="size-12 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-500 font-bold text-lg">
+                                N
+                            </div>
+<div class="flex-1">
+<p class="text-white font-bold text-sm">Netflix Premium</p>
+<p class="text-zinc-500 text-xs">Entertainment • Monthly</p>
+</div>
+<div class="text-right">
+<p class="text-white font-bold text-sm">$22.99</p>
+<p class="text-emerald-500 text-[10px] font-bold">Auto-pay ON</p>
+</div>
+</div>
+</div>
+</div>
+<div class="glass-card rounded-2xl p-6 border border-white/5 flex flex-col">
+<h3 class="text-white font-bold mb-6">Spend by Category</h3>
+<div class="flex-1 flex items-center justify-center">
+<div class="relative size-48">
+<svg class="size-full" viewbox="0 0 36 36">
+<path class="text-zinc-800" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-width="3"></path>
+<path class="text-primary" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-dasharray="60, 100" stroke-linecap="round" stroke-width="3"></path>
+<path class="text-indigo-400" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-dasharray="20, 100" stroke-dashoffset="-60" stroke-linecap="round" stroke-width="3"></path>
+</svg>
+<div class="absolute inset-0 flex flex-col items-center justify-center">
+<p class="text-zinc-400 text-[10px] uppercase font-bold">Total</p>
+<p class="text-white text-xl font-bold">$342</p>
+</div>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-4 mt-6">
+<div class="flex items-center gap-2">
+<div class="size-2 rounded-full bg-primary"></div>
+<span class="text-xs text-zinc-400">Software (60%)</span>
+</div>
+<div class="flex items-center gap-2">
+<div class="size-2 rounded-full bg-indigo-400"></div>
+<span class="text-xs text-zinc-400">Entertainment (20%)</span>
+</div>
+<div class="flex items-center gap-2">
+<div class="size-2 rounded-full bg-zinc-600"></div>
+<span class="text-xs text-zinc-400">Utilities (15%)</span>
+</div>
+<div class="flex items-center gap-2">
+<div class="size-2 rounded-full bg-zinc-800"></div>
+<span class="text-xs text-zinc-400">Others (5%)</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+
+</body></html>

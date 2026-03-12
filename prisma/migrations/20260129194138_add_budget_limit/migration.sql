@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "users" ADD COLUMN     "budget_limit" DOUBLE PRECISION NOT NULL DEFAULT 500.0;
