@@ -48,6 +48,8 @@ export interface User {
     name: string | null;
     avatar_url: string | null;
     default_currency: string;
+    show_monthly_costs: boolean;
+    budget_limit: number;
     createdAt: Date;
     updatedAt: Date;
 }

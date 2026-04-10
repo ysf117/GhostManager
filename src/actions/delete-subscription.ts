@@ -11,6 +11,10 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { createClient } from "@/lib/supabase/server";
 
+const isDev = process.env.NODE_ENV !== "production";
+function debug(...args: unknown[]) { if (isDev) console.log(...args); }
+function debugError(...args: unknown[]) { if (isDev) console.error(...args); }
+
 export interface DeleteSubscriptionResult {
     success: boolean;
     message: string;
@@ -21,11 +25,11 @@ export interface DeleteSubscriptionResult {
  * Only allows deletion if the subscription belongs to the authenticated user
  */
 export async function deleteSubscription(id: string): Promise<DeleteSubscriptionResult> {
-    console.log("\n");
-    console.log("═══════════════════════════════════════════════════════════");
-    console.log("🗑️ DELETE SUBSCRIPTION ACTION STARTED");
-    console.log("═══════════════════════════════════════════════════════════");
-    console.log("Subscription ID:", id);
+    debug("\n");
+    debug("═══════════════════════════════════════════════════════════");
+    debug("🗑️ DELETE SUBSCRIPTION ACTION STARTED");
+    debug("═══════════════════════════════════════════════════════════");
+    debug("Subscription ID:", id);
 
     try {
         // ────────────────────────────────────────────────────────────
@@ -40,14 +44,14 @@ export async function deleteSubscription(id: string): Promise<DeleteSubscription
         const { data: { user } } = await supabase.auth.getUser();
 
         if (!user) {
-            console.error("❌ User not authenticated");
+            debugError("❌ User not authenticated");
             return {
                 success: false,
                 message: "You must be logged in to delete a subscription.",
             };
         }
 
-        console.log("✅ Authenticated user:", user.id);
+        debug("✅ Authenticated user:", user.id);
 
         // ────────────────────────────────────────────────────────────
         // STEP 2: Verify subscription belongs to user
@@ -58,7 +62,7 @@ export async function deleteSubscription(id: string): Promise<DeleteSubscription
         });
 
         if (!subscription) {
-            console.error("❌ Subscription not found:", id);
+            debugError("❌ Subscription not found:", id);
             return {
                 success: false,
                 message: "Subscription not found.",
@@ -66,14 +70,14 @@ export async function deleteSubscription(id: string): Promise<DeleteSubscription
         }
 
         if (subscription.user_id !== user.id) {
-            console.error("❌ Unauthorized: User does not own this subscription");
+            debugError("❌ Unauthorized: User does not own this subscription");
             return {
                 success: false,
                 message: "You do not have permission to delete this subscription.",
             };
         }
 
-        console.log("✅ Verified ownership for:", subscription.service_name);
+        debug("✅ Verified ownership for:", subscription.service_name);
 
         // ────────────────────────────────────────────────────────────
         // STEP 3: Delete the subscription
@@ -82,19 +86,19 @@ export async function deleteSubscription(id: string): Promise<DeleteSubscription
             where: { id },
         });
 
-        console.log("✅ Subscription deleted successfully");
+        debug("✅ Subscription deleted successfully");
 
         // ────────────────────────────────────────────────────────────
         // STEP 4: Revalidate affected paths
         // ────────────────────────────────────────────────────────────
         revalidatePath("/dashboard");
         revalidatePath("/subscriptions");
-        console.log("✅ Paths revalidated");
+        debug("✅ Paths revalidated");
 
-        console.log("\n");
-        console.log("═══════════════════════════════════════════════════════════");
-        console.log("✅ DELETE SUBSCRIPTION ACTION COMPLETED");
-        console.log("═══════════════════════════════════════════════════════════");
+        debug("\n");
+        debug("═══════════════════════════════════════════════════════════");
+        debug("✅ DELETE SUBSCRIPTION ACTION COMPLETED");
+        debug("═══════════════════════════════════════════════════════════");
 
         return {
             success: true,
@@ -102,7 +106,7 @@ export async function deleteSubscription(id: string): Promise<DeleteSubscription
         };
 
     } catch (error) {
-        console.error("❌ Delete subscription error:", error);
+        debugError("❌ Delete subscription error:", error);
 
         return {
             success: false,

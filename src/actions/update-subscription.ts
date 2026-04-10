@@ -11,6 +11,12 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { createClient } from "@/lib/supabase/server";
 import { z } from "zod";
+import { calculateNextBillingDate } from "@/lib/utils/date-calculator";
+import { BillingCycle } from "@/types/database";
+
+const isDev = process.env.NODE_ENV !== "production";
+function debug(...args: unknown[]) { if (isDev) console.log(...args); }
+function debugError(...args: unknown[]) { if (isDev) console.error(...args); }
 
 // ============================================
 // VALIDATION SCHEMA
@@ -102,10 +108,10 @@ function parseFormData(formData: FormData): Record<string, unknown> {
 export async function updateSubscription(
     formData: FormData
 ): Promise<UpdateSubscriptionResult> {
-    console.log("\n");
-    console.log("═══════════════════════════════════════════════════════════");
-    console.log("✏️ UPDATE SUBSCRIPTION ACTION STARTED");
-    console.log("═══════════════════════════════════════════════════════════");
+    debug("\n");
+    debug("═══════════════════════════════════════════════════════════");
+    debug("✏️ UPDATE SUBSCRIPTION ACTION STARTED");
+    debug("═══════════════════════════════════════════════════════════");
 
     try {
         // ────────────────────────────────────────────────────────────
@@ -120,20 +126,20 @@ export async function updateSubscription(
         const { data: { user } } = await supabase.auth.getUser();
 
         if (!user) {
-            console.error("❌ User not authenticated");
+            debugError("❌ User not authenticated");
             return {
                 success: false,
                 message: "You must be logged in to update a subscription.",
             };
         }
 
-        console.log("✅ Authenticated user:", user.id);
+        debug("✅ Authenticated user:", user.id);
 
         // ────────────────────────────────────────────────────────────
         // STEP 2: Parse and validate form data
         // ────────────────────────────────────────────────────────────
         const rawData = parseFormData(formData);
-        console.log("📦 Parsed form data:", rawData);
+        debug("📦 Parsed form data:", rawData);
 
         const validationResult = UpdateSubscriptionSchema.safeParse(rawData);
 
@@ -144,7 +150,7 @@ export async function updateSubscription(
                 errors[path] = issue.message;
             });
 
-            console.error("❌ Validation failed:", errors);
+            debugError("❌ Validation failed:", errors);
             return {
                 success: false,
                 message: "Validation failed. Please check your inputs.",
@@ -153,7 +159,7 @@ export async function updateSubscription(
         }
 
         const data = validationResult.data;
-        console.log("✅ Validated data:", data);
+        debug("✅ Validated data:", data);
 
         // ────────────────────────────────────────────────────────────
         // STEP 3: Verify subscription belongs to user
@@ -164,7 +170,7 @@ export async function updateSubscription(
         });
 
         if (!existingSubscription) {
-            console.error("❌ Subscription not found:", data.id);
+            debugError("❌ Subscription not found:", data.id);
             return {
                 success: false,
                 message: "Subscription not found.",
@@ -172,27 +178,21 @@ export async function updateSubscription(
         }
 
         if (existingSubscription.user_id !== user.id) {
-            console.error("❌ Unauthorized: User does not own this subscription");
+            debugError("❌ Unauthorized: User does not own this subscription");
             return {
                 success: false,
                 message: "You do not have permission to update this subscription.",
             };
         }
 
-        console.log("✅ Verified ownership for:", existingSubscription.service_name);
+        debug("✅ Verified ownership for:", existingSubscription.service_name);
 
         // ────────────────────────────────────────────────────────────
         // STEP 4: Calculate next billing date if not provided
         // ────────────────────────────────────────────────────────────
-        let nextBillingDate = data.next_billing_date;
-        if (!nextBillingDate) {
-            const startDate = new Date(data.start_date);
-            if (data.billing_cycle === "MONTHLY") {
-                nextBillingDate = new Date(startDate.setMonth(startDate.getMonth() + 1));
-            } else {
-                nextBillingDate = new Date(startDate.setFullYear(startDate.getFullYear() + 1));
-            }
-        }
+        const nextBillingDate =
+            data.next_billing_date ??
+            calculateNextBillingDate(data.start_date, data.billing_cycle as BillingCycle);
 
         // ────────────────────────────────────────────────────────────
         // STEP 5: Update subscription
@@ -217,19 +217,19 @@ export async function updateSubscription(
             },
         });
 
-        console.log("✅ Subscription updated:", updated.id);
+        debug("✅ Subscription updated:", updated.id);
 
         // ────────────────────────────────────────────────────────────
         // STEP 6: Revalidate paths
         // ────────────────────────────────────────────────────────────
         revalidatePath("/dashboard");
         revalidatePath("/subscriptions");
-        console.log("✅ Paths revalidated");
+        debug("✅ Paths revalidated");
 
-        console.log("\n");
-        console.log("═══════════════════════════════════════════════════════════");
-        console.log("✅ UPDATE SUBSCRIPTION ACTION COMPLETED");
-        console.log("═══════════════════════════════════════════════════════════");
+        debug("\n");
+        debug("═══════════════════════════════════════════════════════════");
+        debug("✅ UPDATE SUBSCRIPTION ACTION COMPLETED");
+        debug("═══════════════════════════════════════════════════════════");
 
         return {
             success: true,
@@ -237,7 +237,7 @@ export async function updateSubscription(
         };
 
     } catch (error) {
-        console.error("❌ Update subscription error:", error);
+        debugError("❌ Update subscription error:", error);
 
         return {
             success: false,

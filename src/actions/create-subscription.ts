@@ -13,6 +13,12 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { createClient } from "@/lib/supabase/server";
 import { z } from "zod";
+import { calculateNextBillingDate } from "@/lib/utils/date-calculator";
+import { BillingCycle } from "@/types/database";
+
+const isDev = process.env.NODE_ENV !== "production";
+function debug(...args: unknown[]) { if (isDev) console.log(...args); }
+function debugError(...args: unknown[]) { if (isDev) console.error(...args); }
 
 // ============================================
 // VALIDATION SCHEMA
@@ -72,17 +78,17 @@ function parseFormData(formData: FormData): Record<string, unknown> {
         raw[key] = value;
     });
 
-    console.log("📦 Raw FormData entries:", raw);
+    debug("📦 Raw FormData entries:", raw);
 
     // Parse cost as float
     if (raw.cost !== undefined && raw.cost !== null && raw.cost !== "") {
         const costString = String(raw.cost);
         const parsedCost = parseFloat(costString);
         if (isNaN(parsedCost)) {
-            console.error("❌ Failed to parse cost:", raw.cost);
+            debugError("❌ Failed to parse cost:", raw.cost);
         } else {
             raw.cost = parsedCost;
-            console.log("💰 Parsed cost:", parsedCost);
+            debug("💰 Parsed cost:", parsedCost);
         }
     }
 
@@ -112,50 +118,13 @@ function parseFormData(formData: FormData): Record<string, unknown> {
     // START DATE TRIAL FIX:
     // If it's a trial and no start date is provided, default to NOW.
     if (raw.is_trial === true && (!raw.start_date || raw.start_date === "")) {
-        console.log("📅 Trial detected with no start date. Defaulting start_date to NOW.");
+        debug("📅 Trial detected with no start date. Defaulting start_date to NOW.");
         raw.start_date = new Date().toISOString();
     }
 
     return raw;
 }
 
-/**
- * Calculates the next billing date based on start date and billing cycle.
- * If the calculated date is in the past, advances to the next cycle.
- */
-function calculateNextBillingDate(
-    startDate: Date,
-    billingCycle: "MONTHLY" | "YEARLY"
-): Date {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    const start = new Date(startDate);
-    start.setHours(0, 0, 0, 0);
-
-    // If start date is in the future, that's the next billing date
-    if (start > today) {
-        console.log("📅 Start date is in future, using as next billing date:", start);
-        return start;
-    }
-
-    // Calculate how many billing periods have passed
-    const msPerDay = 24 * 60 * 60 * 1000;
-    const daysSinceStart = Math.floor((today.getTime() - start.getTime()) / msPerDay);
-    const cycleInDays = billingCycle === "YEARLY" ? 365 : 30;
-    const cyclesPassed = Math.floor(daysSinceStart / cycleInDays);
-
-    // Next billing date is the start date plus (cycles passed + 1) billing periods
-    const nextDate = new Date(start);
-    if (billingCycle === "YEARLY") {
-        nextDate.setFullYear(nextDate.getFullYear() + cyclesPassed + 1);
-    } else {
-        nextDate.setMonth(nextDate.getMonth() + cyclesPassed + 1);
-    }
-
-    console.log("📅 Calculated next billing date:", nextDate);
-    return nextDate;
-}
 
 // ============================================
 // MAIN ACTION
@@ -177,33 +146,33 @@ function calculateNextBillingDate(
 export async function createSubscription(
     formData: FormData | CreateSubscriptionInput
 ): Promise<CreateSubscriptionResult> {
-    console.log("\n");
-    console.log("═══════════════════════════════════════════════════════════");
-    console.log("🚀 CREATE SUBSCRIPTION ACTION STARTED");
-    console.log("═══════════════════════════════════════════════════════════");
-    console.log("⏰ Timestamp:", new Date().toISOString());
+    debug("\n");
+    debug("═══════════════════════════════════════════════════════════");
+    debug("🚀 CREATE SUBSCRIPTION ACTION STARTED");
+    debug("═══════════════════════════════════════════════════════════");
+    debug("⏰ Timestamp:", new Date().toISOString());
 
     try {
         // ────────────────────────────────────────────────────────────
         // STEP 1: Parse the input data
         // ────────────────────────────────────────────────────────────
-        console.log("\n📋 STEP 1: Parsing input data...");
+        debug("\n📋 STEP 1: Parsing input data...");
 
         let dataToValidate: Record<string, unknown>;
 
         if (formData instanceof FormData) {
-            console.log("   Input type: FormData");
+            debug("   Input type: FormData");
             dataToValidate = parseFormData(formData);
         } else {
-            console.log("   Input type: Object");
-            console.log("   Raw object:", JSON.stringify(formData, null, 2));
+            debug("   Input type: Object");
+            debug("   Raw object:", JSON.stringify(formData, null, 2));
             dataToValidate = formData as Record<string, unknown>;
         }
 
         // ────────────────────────────────────────────────────────────
         // STEP 2: Validate the data with Zod
         // ────────────────────────────────────────────────────────────
-        console.log("\n✅ STEP 2: Validating data with Zod schema...");
+        debug("\n✅ STEP 2: Validating data with Zod schema...");
 
         const validationResult = CreateSubscriptionSchema.safeParse(dataToValidate);
 
@@ -212,11 +181,11 @@ export async function createSubscription(
             validationResult.error.issues.forEach((issue) => {
                 const path = issue.path.join(".");
                 errors[path] = issue.message;
-                console.error(`   ❌ Validation error on "${path}": ${issue.message}`);
+                debugError(`   ❌ Validation error on "${path}": ${issue.message}`);
             });
 
-            console.log("\n🛑 VALIDATION FAILED");
-            console.log("   Errors:", JSON.stringify(errors, null, 2));
+            debug("\n🛑 VALIDATION FAILED");
+            debug("   Errors:", JSON.stringify(errors, null, 2));
 
             return {
                 success: false,
@@ -226,13 +195,13 @@ export async function createSubscription(
         }
 
         const validatedData = validationResult.data;
-        console.log("   ✅ Validation passed!");
-        console.log("   Validated data:", JSON.stringify(validatedData, null, 2));
+        debug("   ✅ Validation passed!");
+        debug("   Validated data:", JSON.stringify(validatedData, null, 2));
 
         // ────────────────────────────────────────────────────────────
         // STEP 3: Get authenticated user from Supabase
         // ────────────────────────────────────────────────────────────
-        console.log("\n👤 STEP 3: Getting authenticated user...");
+        debug("\n👤 STEP 3: Getting authenticated user...");
 
         const supabase = await createClient();
 
@@ -243,20 +212,20 @@ export async function createSubscription(
         const { data: { user: authUser } } = await supabase.auth.getUser();
 
         if (!authUser) {
-            console.error("   ❌ USER NOT AUTHENTICATED!");
+            debugError("   ❌ USER NOT AUTHENTICATED!");
             return {
                 success: false,
                 message: "You must be logged in to create a subscription.",
             };
         }
 
-        console.log("   ✅ Authenticated user:", authUser.id);
-        console.log("   User email:", authUser.email);
+        debug("   ✅ Authenticated user:", authUser.id);
+        debug("   User email:", authUser.email);
 
         // ────────────────────────────────────────────────────────────
         // STEP 3b: Lazy Sync - Ensure user exists in local database
         // ────────────────────────────────────────────────────────────
-        console.log("\n🔄 STEP 3b: Syncing user to local database (upsert)...");
+        debug("\n🔄 STEP 3b: Syncing user to local database (upsert)...");
 
         const user = await prisma.user.upsert({
             where: { id: authUser.id },
@@ -272,24 +241,24 @@ export async function createSubscription(
             },
         });
 
-        console.log("   ✅ User synced:", user.id);
-        console.log("   User name:", user.name);
+        debug("   ✅ User synced:", user.id);
+        debug("   User name:", user.name);
 
         // ────────────────────────────────────────────────────────────
         // STEP 4: Calculate next billing date if not provided
         // ────────────────────────────────────────────────────────────
-        console.log("\n📅 STEP 4: Determining next billing date...");
+        debug("\n📅 STEP 4: Determining next billing date...");
 
         const nextBillingDate =
             validatedData.next_billing_date ??
-            calculateNextBillingDate(validatedData.start_date, validatedData.billing_cycle);
+            calculateNextBillingDate(validatedData.start_date, validatedData.billing_cycle as BillingCycle);
 
-        console.log("   Next billing date:", nextBillingDate.toISOString());
+        debug("   Next billing date:", nextBillingDate.toISOString());
 
         // ────────────────────────────────────────────────────────────
         // STEP 5: Create the subscription in the database
         // ────────────────────────────────────────────────────────────
-        console.log("\n💾 STEP 5: Creating subscription in database...");
+        debug("\n💾 STEP 5: Creating subscription in database...");
 
         const subscriptionData = {
             user_id: user.id, // CRITICAL: Foreign key to user
@@ -308,30 +277,30 @@ export async function createSubscription(
             reminder_days: validatedData.reminder_days,
         };
 
-        console.log("   Data to insert:", JSON.stringify(subscriptionData, null, 2));
+        debug("   Data to insert:", JSON.stringify(subscriptionData, null, 2));
 
         const subscription = await prisma.subscription.create({
             data: subscriptionData,
         });
 
-        console.log("   ✅ Subscription created successfully!");
-        console.log("   Subscription ID:", subscription.id);
+        debug("   ✅ Subscription created successfully!");
+        debug("   Subscription ID:", subscription.id);
 
         // ────────────────────────────────────────────────────────────
         // STEP 6: Revalidate the dashboard
         // ────────────────────────────────────────────────────────────
-        console.log("\n🔄 STEP 6: Revalidating dashboard...");
+        debug("\n🔄 STEP 6: Revalidating dashboard...");
         revalidatePath("/dashboard");
-        console.log("   ✅ Dashboard revalidated!");
+        debug("   ✅ Dashboard revalidated!");
 
         // ────────────────────────────────────────────────────────────
         // SUCCESS!
         // ────────────────────────────────────────────────────────────
-        console.log("\n");
-        console.log("═══════════════════════════════════════════════════════════");
-        console.log("✅ CREATE SUBSCRIPTION ACTION COMPLETED SUCCESSFULLY");
-        console.log("═══════════════════════════════════════════════════════════");
-        console.log("\n");
+        debug("\n");
+        debug("═══════════════════════════════════════════════════════════");
+        debug("✅ CREATE SUBSCRIPTION ACTION COMPLETED SUCCESSFULLY");
+        debug("═══════════════════════════════════════════════════════════");
+        debug("\n");
 
         return {
             success: true,
@@ -343,22 +312,22 @@ export async function createSubscription(
         // ────────────────────────────────────────────────────────────
         // ERROR HANDLING
         // ────────────────────────────────────────────────────────────
-        console.log("\n");
-        console.log("═══════════════════════════════════════════════════════════");
-        console.error("❌ CREATE SUBSCRIPTION ACTION FAILED");
-        console.log("═══════════════════════════════════════════════════════════");
+        debug("\n");
+        debug("═══════════════════════════════════════════════════════════");
+        debugError("❌ CREATE SUBSCRIPTION ACTION FAILED");
+        debug("═══════════════════════════════════════════════════════════");
 
         if (error instanceof Error) {
-            console.error("   Error name:", error.name);
-            console.error("   Error message:", error.message);
-            console.error("   Stack trace:", error.stack);
+            debugError("   Error name:", error.name);
+            debugError("   Error message:", error.message);
+            debugError("   Stack trace:", error.stack);
 
             // Check for Prisma-specific errors
             if (error.message.includes("Foreign key constraint")) {
-                console.error("   💡 This is a foreign key error. Check that user_id is valid.");
+                debugError("   💡 This is a foreign key error. Check that user_id is valid.");
             }
             if (error.message.includes("Unique constraint")) {
-                console.error("   💡 This is a unique constraint error. A similar record may exist.");
+                debugError("   💡 This is a unique constraint error. A similar record may exist.");
             }
 
             return {
@@ -367,7 +336,7 @@ export async function createSubscription(
             };
         }
 
-        console.error("   Unknown error type:", error);
+        debugError("   Unknown error type:", error);
 
         return {
             success: false,
